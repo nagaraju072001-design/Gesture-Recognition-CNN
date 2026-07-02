@@ -37,6 +37,11 @@ MODEL_NAME = "gesture_model.keras"
 # -----------------------------
 # Camera
 # -----------------------------
-CAMERA_INDEX = 1
+# -----------------------------
+# Camera
+# -----------------------------
+CAMERA_INDEX = 1      # Default camera
+SAVE_EVERY_N_FRAMES = 5
+WINDOW_NAME = "Gesture Collector"
 
 print("Configuration Loaded Successfully")
