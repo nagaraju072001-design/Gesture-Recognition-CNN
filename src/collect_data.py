@@ -14,8 +14,9 @@ hands = mp_hands.Hands(
     min_tracking_confidence=0.7
 )
 
-cap = cv2.VideoCapture(0)
+from config import CAMERA_INDEX
 
+cap = cv2.VideoCapture(CAMERA_INDEX)
 current_gesture = None
 count = 0
 
