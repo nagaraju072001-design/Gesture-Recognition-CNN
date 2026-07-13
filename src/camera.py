@@ -1,60 +1,31 @@
 import cv2
 
 
-def list_cameras(max_cameras=5):
-    """
-    Detect all available cameras.
-    """
-    cameras = []
-
-    print("\nSearching for cameras...\n")
-
-    for i in range(max_cameras):
-
-        cap = cv2.VideoCapture(i)
-
-        if cap.isOpened():
-
-            ret, frame = cap.read()
-
-            if ret:
-                cameras.append(i)
-                print(f"[{i}] Camera detected")
-
-        cap.release()
-
-    return cameras
-
-
 def open_camera():
+    """
+    Opens the Logitech webcam connected to the Raspberry Pi.
+    """
 
-    cameras = list_cameras()
+    print("\nOpening Logitech Camera...")
 
-    if len(cameras) == 0:
-        raise RuntimeError("No camera found!")
+    # Open the webcam using the V4L2 backend
+    cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
 
-    print("\nAvailable Cameras")
+    if not cap.isOpened():
+        raise RuntimeError("Cannot open Logitech camera!")
 
-    for cam in cameras:
-        print(f"{cam} -> Camera {cam}")
+    # Optional: Set camera resolution
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
-    while True:
+    # Test that we can actually read a frame
+    ret, frame = cap.read()
 
-        choice = input("\nSelect Camera Number: ")
+    if not ret:
+        cap.release()
+        raise RuntimeError("Camera opened but could not read a frame!")
 
-        try:
+    print("✅ Logitech Camera opened successfully!")
+    print(f"Resolution: {frame.shape[1]} x {frame.shape[0]}")
 
-            choice = int(choice)
-
-            if choice in cameras:
-
-                cap = cv2.VideoCapture(choice)
-
-                print(f"\nUsing Camera {choice}")
-
-                return cap
-
-        except:
-            pass
-
-        print("Invalid selection.")
+    return cap

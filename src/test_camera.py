@@ -3,19 +3,23 @@ import cv2
 
 cap = open_camera()
 
-while True:
+print("\nTesting camera...\n")
+
+frame_count = 0
+
+while frame_count < 10:
 
     ret, frame = cap.read()
 
     if not ret:
+        print("Failed to capture frame!")
         break
 
-    cv2.imshow("Camera Test", frame)
+    frame_count += 1
 
-    key = cv2.waitKey(1)
-
-    if key == ord("q"):
-        break
+    print(f"Frame {frame_count} captured successfully")
+    print(f"Resolution: {frame.shape[1]} x {frame.shape[0]}")
 
 cap.release()
-cv2.destroyAllWindows()
+
+print("\n✅ Camera test completed successfully!")
