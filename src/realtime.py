@@ -2,15 +2,19 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import pickle
+import time
+
+from collections import deque
 
 from tensorflow.keras.models import load_model
 
 from config import MODELS_DIR
 from camera import open_camera
 
-# ---------------------------------------
-# Load Model and Label Encoder
-# ---------------------------------------
+# -------------------------------------------------
+# Load AI Model
+# -------------------------------------------------
+
 print("Loading AI Model...")
 
 model = load_model(MODELS_DIR / "gesture_model.keras")
@@ -20,198 +24,135 @@ with open(MODELS_DIR / "label_encoder.pkl", "rb") as f:
 
 print("Model Loaded Successfully!")
 
-# ---------------------------------------
-# Open Camera
-# ---------------------------------------
+# -------------------------------------------------
+# Camera
+# -------------------------------------------------
+
 cap = open_camera()
 
-# ---------------------------------------
-# MediaPipe Hands
-# ---------------------------------------
+# -------------------------------------------------
+# MediaPipe
+# -------------------------------------------------
+
 mp_hands = mp.solutions.hands
-mp_draw = mp.solutions.drawing_utils
 
 hands = mp_hands.Hands(
     static_image_mode=False,
-    max_num_hands=2,
+    max_num_hands=1,
     min_detection_confidence=0.7,
     min_tracking_confidence=0.7,
 )
 
-# ---------------------------------------
-# FPS
-# ---------------------------------------
-prev_time = cv2.getTickCount()
+print("\n======================================")
+print(" Real-Time Gesture Recognition Started")
+print(" Press Ctrl+C to stop")
+print("======================================\n")
 
-while True:
+# -------------------------------------------------
+# Variables
+# -------------------------------------------------
 
-    ret, frame = cap.read()
+last_gesture = ""
+last_print_time = 0
 
-    if not ret:
-        break
+history = deque(maxlen=5)
 
-    frame = cv2.flip(frame, 1)
+# -------------------------------------------------
+# Main Loop
+# -------------------------------------------------
 
-    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+try:
 
-    results = hands.process(rgb)
+    while True:
 
-    total_hands = 0
+        ret, frame = cap.read()
 
-    if results.multi_hand_landmarks:
+        if not ret:
+            continue
 
-        total_hands = len(results.multi_hand_landmarks)
+        frame = cv2.flip(frame, 1)
 
-        for hand_landmarks, handedness in zip(
-                results.multi_hand_landmarks,
-                results.multi_handedness):
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-            # Draw landmarks
-            mp_draw.draw_landmarks(
-                frame,
-                hand_landmarks,
-                mp_hands.HAND_CONNECTIONS
+        results = hands.process(rgb)
+
+        if not results.multi_hand_landmarks:
+            history.clear()
+            continue
+
+        hand_landmarks = results.multi_hand_landmarks[0]
+
+        # ------------------------------------------
+        # Build Feature Vector
+        # ------------------------------------------
+
+        data = []
+
+        for lm in hand_landmarks.landmark:
+
+            data.extend([
+                lm.x,
+                lm.y,
+                lm.z
+            ])
+
+        data = np.array(data, dtype=np.float32).reshape(1, 63)
+
+        # ------------------------------------------
+        # Prediction
+        # ------------------------------------------
+
+        prediction = model.predict(data, verbose=0)
+
+        class_id = np.argmax(prediction)
+
+        confidence = float(prediction[0][class_id])
+
+        # Ignore weak predictions
+
+        if confidence < 0.80:
+            continue
+
+        gesture = label_encoder.inverse_transform([class_id])[0]
+
+        # ------------------------------------------
+        # Prediction Smoothing
+        # ------------------------------------------
+
+        history.append(gesture)
+
+        if len(history) < 5:
+            continue
+
+        stable_gesture = max(set(history), key=history.count)
+
+        if history.count(stable_gesture) < 4:
+            continue
+
+        # ------------------------------------------
+        # Print only when changed
+        # ------------------------------------------
+
+        now = time.time()
+
+        if stable_gesture != last_gesture or (now - last_print_time) > 1:
+
+            print(
+                f"Gesture : {stable_gesture:<10} | Confidence : {confidence*100:6.2f}%"
             )
 
-            # ---------------------------------------
-            # Normalize Landmarks (same as training)
-            # ---------------------------------------
-            wrist = hand_landmarks.landmark[0]
+            last_gesture = stable_gesture
+            last_print_time = now
 
-            data = []
+except KeyboardInterrupt:
 
-            for lm in hand_landmarks.landmark:
+    print("\nStopping Gesture Recognition...")
 
-                data.extend([
-                    lm.x - wrist.x,
-                    lm.y - wrist.y,
-                    lm.z - wrist.z
-                ])
+finally:
 
-            data = np.array(data, dtype=np.float32).reshape(1, -1)
+    cap.release()
 
-            # ---------------------------------------
-            # Predict Gesture
-            # ---------------------------------------
-            prediction = model.predict(data, verbose=0)
+    hands.close()
 
-            class_id = np.argmax(prediction)
-
-            confidence = float(prediction[0][class_id])
-
-            gesture = label_encoder.inverse_transform([class_id])[0]
-
-            # -----------------------------
-            # Display probabilities on screen
-            # -----------------------------
-            start_y = 120
-
-            for i, (name, prob) in enumerate(zip(label_encoder.classes_, prediction[0])):
-
-                cv2.putText(
-                    frame,
-                    f"{name}: {prob*100:.1f}%",
-                    (20, start_y + i * 25),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6,
-                    (0, 255, 255),
-                    2
-                )
-
-            # ---------------------------------------
-            # Hand Label
-            # ---------------------------------------
-            hand_label = handedness.classification[0].label
-
-            # ---------------------------------------
-            # Bounding Box
-            # ---------------------------------------
-            h, w, _ = frame.shape
-
-            xs = [lm.x for lm in hand_landmarks.landmark]
-            ys = [lm.y for lm in hand_landmarks.landmark]
-
-            x1 = int(min(xs) * w)
-            y1 = int(min(ys) * h)
-            x2 = int(max(xs) * w)
-            y2 = int(max(ys) * h)
-
-            cv2.rectangle(
-                frame,
-                (x1 - 20, y1 - 20),
-                (x2 + 20, y2 + 20),
-                (0, 255, 0),
-                2,
-            )
-
-            # ---------------------------------------
-            # Display Text
-            # ---------------------------------------
-            cv2.putText(
-                frame,
-                hand_label,
-                (x1, y1 - 60),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.8,
-                (255, 0, 0),
-                2,
-            )
-
-            cv2.putText(
-                frame,
-                gesture,
-                (x1, y1 - 30),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.9,
-                (0, 255, 0),
-                2,
-            )
-
-            cv2.putText(
-                frame,
-                f"{confidence*100:.1f}%",
-                (x1, y2 + 30),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
-                (0, 255, 255),
-                2,
-            )
-
-    # ---------------------------------------
-    # FPS
-    # ---------------------------------------
-    current = cv2.getTickCount()
-
-    fps = cv2.getTickFrequency() / (current - prev_time)
-
-    prev_time = current
-
-    cv2.putText(
-        frame,
-        f"FPS: {fps:.1f}",
-        (20, 40),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.8,
-        (255, 255, 0),
-        2,
-    )
-
-    cv2.putText(
-        frame,
-        f"Hands: {total_hands}",
-        (20, 75),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.8,
-        (0, 255, 0),
-        2,
-    )
-
-    cv2.imshow("Real-Time Gesture Recognition", frame)
-
-    key = cv2.waitKey(1) & 0xFF
-
-    if key == ord("q"):
-        break
-
-cap.release()
-cv2.destroyAllWindows()
+    print("Camera Released.")
+    print("Done.")
