@@ -195,23 +195,6 @@ python uart_test.py
 
 ---
 
-## 📸 Demo
-
-Add screenshots inside the **screenshots/** folder.
-
-Example:
-
-```
-screenshots/
-    live_detection.png
-    prediction.png
-    uart_output.png
-```
-
-You can display them here later.
-
----
-
 ## 🚀 Future Improvements
 
 - Dynamic gesture recognition
