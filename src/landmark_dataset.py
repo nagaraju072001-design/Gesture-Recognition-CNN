@@ -4,6 +4,7 @@ import pandas as pd
 from pathlib import Path
 
 from config import DATASET_DIR
+from normalize import LandmarkNormalizer
 
 # ----------------------------------
 # MediaPipe Hand Detector
@@ -14,8 +15,14 @@ mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(
     static_image_mode=True,
     max_num_hands=1,
-    min_detection_confidence=0.5
+    min_detection_confidence=0.5,
 )
+
+# ----------------------------------
+# Landmark Normalizer
+# ----------------------------------
+
+normalizer = LandmarkNormalizer()
 
 # ----------------------------------
 # Gesture folders
@@ -26,7 +33,7 @@ GESTURES = [
     "Fist",
     "Peace",
     "Thumb_Up",
-    "OK"
+    "OK",
 ]
 
 # ----------------------------------
@@ -72,14 +79,28 @@ for gesture in GESTURES:
 
         hand = results.multi_hand_landmarks[0]
 
-        row = [gesture]
+        # ----------------------------------
+        # Collect Raw Landmarks
+        # ----------------------------------
+
+        landmarks = []
 
         for lm in hand.landmark:
-            row.extend([
+            landmarks.extend([
                 lm.x,
                 lm.y,
-                lm.z
+                lm.z,
             ])
+
+        # ----------------------------------
+        # Normalize Landmarks
+        # ----------------------------------
+
+        normalized_landmarks = normalizer.normalize(landmarks)
+
+        row = [gesture]
+
+        row.extend(normalized_landmarks.tolist())
 
         dataset.append(row)
 

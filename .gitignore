@@ -1,4 +1,25 @@
-venv/
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.so
+
+# Virtual Environment
+venv/
+.env
+
+# VS Code
+.vscode/
+
+# macOS
 .DS_Store
+
+# Python cache
+.pytest_cache/
+.mypy_cache/
+
+# Models (optional if model is very large)
+# models/*.keras
+
+# Images/Screenshots (optional)
+# screenshots/
+dataset/

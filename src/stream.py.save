@@ -1,0 +1,181 @@
+import time
+import cv2
+
+from camera import open_camera
+from detector import GestureDetector
+from overlay import Overlay
+from performance import PerformanceMonitor
+from history import GestureHistory
+
+
+class VideoStream:
+
+    def __init__(self):
+
+        print("Starting Video Stream...")
+
+        self.cap = open_camera()
+
+        self.detector = GestureDetector()
+
+        self.overlay = Overlay()
+
+        self.performance = PerformanceMonitor()
+
+        self.history = GestureHistory()
+
+        self.last_camera_check = time.time()
+
+        print("✅ Video Stream Ready!")
+
+    def reconnect_camera(self):
+
+        print("Reconnecting camera...")
+
+        try:
+            self.cap.release()
+        except Exception:
+            pass
+
+        time.sleep(1)
+
+        self.cap = open_camera()
+
+    def generate_frames(self):
+
+        while True:
+
+            success, frame = self.cap.read()
+
+            if not success:
+
+                if time.time() - self.last_camera_check > 2:
+
+                    self.reconnect_camera()
+
+                    self.last_camera_check = time.time()
+
+                continue
+
+            frame = cv2.flip(frame, 1)
+
+            # -------------------------
+            # Performance
+            # -------------------------
+
+            self.performance.update()
+
+            fps = self.performance.get_fps()
+
+            cpu = self.performance.get_cpu()
+
+            ram = self.performance.get_memory()
+
+            # -------------------------
+            # AI Prediction
+            # -------------------------
+
+            frame, predictions = self.detector.process(frame)
+
+            # -------------------------
+            # Gesture History
+            # -------------------------
+
+            for pred in predictions:
+
+                if pred["gesture"] != "Unknown":
+
+                    self.history.add(
+                        pred["hand"],
+                        pred["gesture"]
+                    )
+
+            history = self.history.get()
+
+            # -------------------------
+            # Dashboard
+            # -------------------------
+
+            frame = self.overlay.draw(
+                frame,
+                predictions,
+                fps,
+		cpu,
+	ram,
+            )
+
+            # CPU
+
+            cv2.putText(
+                frame,
+                f"CPU : {cpu:.1f}%",
+                (20, 100),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (255,255,255),
+                2,
+            )
+
+            # RAM
+
+            cv2.putText(
+                frame,
+                f"RAM : {ram:.1f}%",
+                (170,100),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (255,255,255),
+                2,
+            )
+
+            # Gesture History
+
+            y = 140
+
+            cv2.putText(
+                frame,
+                "Recent Gestures",
+                (20,y),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.65,
+                (0,255,255),
+                2,
+            )
+
+            y += 30
+
+            for item in history[:6]:
+
+                cv2.putText(
+                    frame,
+                    f"{item['hand']} : {item['gesture']}",
+                    (20,y),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.55,
+                    (255,255,255),
+                    2,
+                )
+
+                y += 25
+
+            # -------------------------
+            # Encode
+            # -------------------------
+
+            success, buffer = cv2.imencode(".jpg", frame)
+
+            if not success:
+                continue
+
+            frame_bytes = buffer.tobytes()
+
+            yield (
+                b"--frame\r\n"
+                b"Content-Type: image/jpeg\r\n\r\n"
+                + frame_bytes
+                + b"\r\n"
+            )
+
+    def release(self):
+
+        self.cap.release()
