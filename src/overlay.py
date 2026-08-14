@@ -6,87 +6,29 @@ class Overlay:
     def __init__(self):
         self.font = cv2.FONT_HERSHEY_SIMPLEX
 
-    def draw(
-        self,
-        frame,
-        predictions,
-        fps,
-        cpu,
-        ram,
-        history,
-    ):
+    def draw(self, frame, predictions, fps, cpu, ram, history):
 
         h, w = frame.shape[:2]
 
-        # -----------------------------
-        # HEADER
-        # -----------------------------
+        GREEN = (0, 230, 100)
+        WHITE = (245, 245, 245)
+        DARK = (25, 25, 25)
 
-        cv2.rectangle(frame, (0, 0), (w, 90), (35, 35, 35), -1)
+        # -------------------------------------------------
+        # Camera border
+        # -------------------------------------------------
 
-        cv2.putText(
+        cv2.rectangle(
             frame,
-            "AI Hand Gesture Recognition",
-            (20, 30),
-            self.font,
-            0.8,
-            (255, 255, 255),
+            (5, 5),
+            (w - 5, h - 5),
+            GREEN,
             2,
         )
 
-        cv2.putText(
-            frame,
-            f"FPS : {fps:.1f}",
-            (20, 65),
-            self.font,
-            0.6,
-            (0, 255, 255),
-            2,
-        )
-
-        cv2.putText(
-            frame,
-            f"CPU : {cpu:.1f}%",
-            (150, 65),
-            self.font,
-            0.6,
-            (0, 255, 255),
-            2,
-        )
-
-        cv2.putText(
-            frame,
-            f"RAM : {ram:.1f}%",
-            (300, 65),
-            self.font,
-            0.6,
-            (0, 255, 255),
-            2,
-        )
-
-        cv2.putText(
-            frame,
-            f"Hands : {len(predictions)}",
-            (450, 65),
-            self.font,
-            0.6,
-            (0, 255, 255),
-            2,
-        )
-
-        cv2.putText(
-            frame,
-            "Status : RUNNING",
-            (600, 65),
-            self.font,
-            0.6,
-            (0, 255, 0),
-            2,
-        )
-
-        # -----------------------------
-        # HANDS
-        # -----------------------------
+        # -------------------------------------------------
+        # Hand detection
+        # -------------------------------------------------
 
         for pred in predictions:
 
@@ -97,116 +39,117 @@ class Overlay:
             x2 = int(x2 * w)
             y2 = int(y2 * h)
 
-            color = (0, 255, 0) if pred["hand"] == "Right" else (255, 120, 0)
+            color = GREEN
+
+            # Bounding box
 
             cv2.rectangle(
                 frame,
-                (x1 - 15, y1 - 15),
-                (x2 + 15, y2 + 15),
+                (x1, y1),
+                (x2, y2),
                 color,
                 2,
             )
 
-            cv2.rectangle(
-                frame,
-                (x1 - 15, y1 - 70),
-                (x1 + 200, y1 - 15),
-                color,
-                -1,
+            # -------------------------------------------------
+            # Gesture label
+            # -------------------------------------------------
+
+            label = (
+                f"{pred['hand']}   "
+                f"{pred['gesture']}   "
+                f"{pred['confidence']:.1f}%"
             )
 
-            cv2.putText(
-                frame,
-                pred["hand"],
-                (x1, y1 - 48),
+            text_size = cv2.getTextSize(
+                label,
                 self.font,
                 0.55,
-                (0, 0, 0),
-                2,
-            )
-
-            cv2.putText(
-                frame,
-                pred["gesture"],
-                (x1, y1 - 25),
-                self.font,
-                0.65,
-                (0, 0, 0),
-                2,
-            )
-
-            cv2.putText(
-                frame,
-                f"{pred['confidence']:.1f}%",
-                (x1 + 95, y1 - 25),
-                self.font,
-                0.55,
-                (0, 0, 0),
-                2,
-            )
-
-            # -----------------------------
-            # Confidence Bar
-            # -----------------------------
-
-            bar_width = 120
-
-            filled = int(bar_width * pred["confidence"] / 100)
-
-            cv2.rectangle(
-                frame,
-                (x1, y2 + 15),
-                (x1 + bar_width, y2 + 30),
-                (80, 80, 80),
-                -1,
-            )
-
-            cv2.rectangle(
-                frame,
-                (x1, y2 + 15),
-                (x1 + filled, y2 + 30),
-                color,
-                -1,
-            )
-
-        # -----------------------------
-        # Gesture History
-        # -----------------------------
-
-        panel_x = w - 260
-
-        cv2.rectangle(
-            frame,
-            (panel_x, 100),
-            (w - 10, 300),
-            (40, 40, 40),
-            -1,
-        )
-
-        cv2.putText(
-            frame,
-            "Recent Gestures",
-            (panel_x + 10, 125),
-            self.font,
-            0.6,
-            (0, 255, 255),
-            2,
-        )
-
-        y = 155
-
-        for item in history[:6]:
-
-            cv2.putText(
-                frame,
-                f"{item['hand']} : {item['gesture']}",
-                (panel_x + 10, y),
-                self.font,
-                0.5,
-                (255, 255, 255),
                 1,
+            )[0]
+
+            label_width = text_size[0] + 20
+            label_height = 35
+
+            label_x = x1
+            label_y = max(
+                5,
+                y1 - label_height
             )
 
-            y += 25
+            cv2.rectangle(
+                frame,
+                (
+                    label_x,
+                    label_y,
+                ),
+                (
+                    label_x + label_width,
+                    label_y + label_height,
+                ),
+                GREEN,
+                -1,
+            )
+
+            cv2.putText(
+                frame,
+                label,
+                (
+                    label_x + 10,
+                    label_y + 23,
+                ),
+                self.font,
+                0.55,
+                (0, 0, 0),
+                1,
+                cv2.LINE_AA,
+            )
+
+            # -------------------------------------------------
+            # Confidence bar
+            # -------------------------------------------------
+
+            bar_width = 150
+            bar_height = 8
+
+            bar_x = x1
+            bar_y = min(
+                h - 15,
+                y2 + 12
+            )
+
+            filled = int(
+                bar_width *
+                pred["confidence"] /
+                100
+            )
+
+            cv2.rectangle(
+                frame,
+                (
+                    bar_x,
+                    bar_y,
+                ),
+                (
+                    bar_x + bar_width,
+                    bar_y + bar_height,
+                ),
+                (70, 70, 70),
+                -1,
+            )
+
+            cv2.rectangle(
+                frame,
+                (
+                    bar_x,
+                    bar_y,
+                ),
+                (
+                    bar_x + filled,
+                    bar_y + bar_height,
+                ),
+                GREEN,
+                -1,
+            )
 
         return frame

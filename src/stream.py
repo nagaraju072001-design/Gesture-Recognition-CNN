@@ -1,5 +1,5 @@
 import time
-
+import threading
 import cv2
 
 from camera import open_camera
@@ -8,6 +8,10 @@ from overlay import Overlay
 from performance import PerformanceMonitor
 from history import GestureHistory
 from recorder import VideoRecorder
+
+from communication.hex_protocol import get_command
+from communication.packet import create_packet
+from communication.uart_sender import UARTSender
 
 
 class VideoStream:
@@ -26,11 +30,82 @@ class VideoStream:
 
         self.history = GestureHistory()
 
-        self.last_camera_check = time.time()
-
         self.recorder = VideoRecorder()
 
+        self.last_camera_check = time.time()
+
+        # -------------------------------------------------
+        # UART
+        # -------------------------------------------------
+
+        self.uart = UARTSender()
+
+        # -------------------------------------------------
+        # Latest dashboard information
+        # -------------------------------------------------
+
+        self.status_lock = threading.Lock()
+
+        self.status = {
+            "fps": 0.0,
+            "cpu": 0.0,
+            "ram": 0.0,
+            "hands": 0,
+
+            "gesture": "None",
+            "confidence": 0.0,
+            "hand": "None",
+
+            "command": "--",
+            "packet": "--",
+            "uart_status": "READY",
+
+            "model_status": "LOADED",
+            "camera_status": "CONNECTED",
+
+            "history": [],
+        }
+
+        # Prevent repeated UART transmissions
+
+        self.last_uart_gesture = {
+            "Left": None,
+            "Right": None,
+        }
+
         print("✅ Video Stream Ready!")
+
+    # =====================================================
+    # STATUS
+    # =====================================================
+
+    def get_status(self):
+
+        with self.status_lock:
+
+            return {
+                "fps": self.status["fps"],
+                "cpu": self.status["cpu"],
+                "ram": self.status["ram"],
+                "hands": self.status["hands"],
+
+                "gesture": self.status["gesture"],
+                "confidence": self.status["confidence"],
+                "hand": self.status["hand"],
+
+                "command": self.status["command"],
+                "packet": self.status["packet"],
+                "uart_status": self.status["uart_status"],
+
+                "model_status": self.status["model_status"],
+                "camera_status": self.status["camera_status"],
+
+                "history": list(self.status["history"]),
+            }
+
+    # =====================================================
+    # CAMERA RECONNECT
+    # =====================================================
 
     def reconnect_camera(self):
 
@@ -45,146 +120,209 @@ class VideoStream:
 
         self.cap = open_camera()
 
-    def generate_frames(self):
+        with self.status_lock:
+            self.status["camera_status"] = "CONNECTED"
+
+    # =====================================================
+    # UART
+    # =====================================================
+
+    def send_uart(self, gesture):
 
         try:
 
-            while True:
+            command = get_command(gesture)
 
-                success, frame = self.cap.read()
+            if command is None:
+                return
 
-                if not success:
+            command_value = int(command)
 
-                    if time.time() - self.last_camera_check > 2:
+            packet = create_packet(command_value)
 
-                        self.reconnect_camera()
+            self.uart.send(command_value)
 
-                        self.last_camera_check = time.time()
+            with self.status_lock:
 
+                self.status["command"] = (
+                    f"0x{command_value:02X}"
+                )
+
+                self.status["packet"] = (
+                    packet.hex().upper()
+                )
+
+                self.status["uart_status"] = (
+                    "SENT SUCCESSFULLY"
+                )
+
+        except Exception as e:
+
+            print(f"UART Error: {e}")
+
+            with self.status_lock:
+                self.status["uart_status"] = "ERROR"
+
+    # =====================================================
+    # FRAME GENERATOR
+    # =====================================================
+
+    def generate_frames(self):
+
+        while True:
+
+            success, frame = self.cap.read()
+
+            if not success:
+
+                if (
+                    time.time() -
+                    self.last_camera_check
+                    > 2
+                ):
+
+                    self.reconnect_camera()
+
+                    self.last_camera_check = time.time()
+
+                continue
+
+            # Mirror camera
+
+            frame = cv2.flip(frame, 1)
+
+            # -------------------------------------------------
+            # Performance
+            # -------------------------------------------------
+
+            self.performance.update()
+
+            fps = self.performance.get_fps()
+
+            cpu = self.performance.get_cpu()
+
+            ram = self.performance.get_memory()
+
+            # -------------------------------------------------
+            # AI
+            # -------------------------------------------------
+
+            frame, predictions = self.detector.process(
+                frame
+            )
+
+            # -------------------------------------------------
+            # Gesture handling
+            # -------------------------------------------------
+
+            current_gesture = "None"
+            current_confidence = 0.0
+            current_hand = "None"
+
+            for pred in predictions:
+
+                gesture = pred["gesture"]
+
+                hand = pred["hand"]
+
+                confidence = pred["confidence"]
+
+                if gesture == "Unknown":
                     continue
 
-                frame = cv2.flip(frame, 1)
+                current_gesture = gesture
 
-                # -------------------------
-                # Performance
-                # -------------------------
+                current_confidence = confidence
 
-                self.performance.update()
+                current_hand = hand
 
-                fps = self.performance.get_fps()
+                # ---------------------------------------------
+                # Add history only when gesture changes
+                # ---------------------------------------------
 
-                cpu = self.performance.get_cpu()
+                if (
+                    self.last_uart_gesture.get(hand)
+                    != gesture
+                ):
 
-                ram = self.performance.get_memory()
-
-                # -------------------------
-                # AI Prediction
-                # -------------------------
-
-                frame, predictions = self.detector.process(frame)
-
-                # -------------------------
-                # Gesture History
-                # -------------------------
-
-                for pred in predictions:
-
-                    if pred["gesture"] != "Unknown":
-
-                        self.history.add(
-                            pred["hand"],
-                            pred["gesture"]
-                        )
-
-                history = self.history.get()
-
-                # -------------------------
-                # Dashboard
-                # -------------------------
-
-                frame = self.overlay.draw(
-                    frame,
-                    predictions,
-                    fps,
-                    cpu,
-                    ram,
-                    history,
-                )
-
-                # CPU
-
-                cv2.putText(
-                    frame,
-                    f"CPU : {cpu:.1f}%",
-                    (20, 100),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6,
-                    (255, 255, 255),
-                    2,
-                )
-
-                # RAM
-
-                cv2.putText(
-                    frame,
-                    f"RAM : {ram:.1f}%",
-                    (170, 100),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6,
-                    (255, 255, 255),
-                    2,
-                )
-
-                # Gesture History
-
-                y = 140
-
-                cv2.putText(
-                    frame,
-                    "Recent Gestures",
-                    (20, y),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.65,
-                    (0, 255, 255),
-                    2,
-                )
-
-                y += 30
-
-                for item in history[:6]:
-
-                    cv2.putText(
-                        frame,
-                        f"{item['hand']} : {item['gesture']}",
-                        (20, y),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.55,
-                        (255, 255, 255),
-                        2,
+                    self.history.add(
+                        hand,
+                        gesture
                     )
 
-                    y += 25
+                    self.last_uart_gesture[hand] = gesture
 
-                # -------------------------
-                # Encode
-                # -------------------------
+                    # UART
 
-                success, buffer = cv2.imencode(".jpg", frame)
+                    self.send_uart(gesture)
 
-                if not success:
-                    continue
+            # -------------------------------------------------
+            # History
+            # -------------------------------------------------
 
-                frame_bytes = buffer.tobytes()
+            history = self.history.get()
 
-                yield (
-                    b"--frame\r\n"
-                    b"Content-Type: image/jpeg\r\n\r\n"
-                    + frame_bytes
-                    + b"\r\n"
+            # -------------------------------------------------
+            # Camera overlay
+            # -------------------------------------------------
+
+            frame = self.overlay.draw(
+                frame,
+                predictions,
+                fps,
+                cpu,
+                ram,
+                history,
+            )
+
+            # -------------------------------------------------
+            # Update dashboard status
+            # -------------------------------------------------
+
+            with self.status_lock:
+
+                self.status["fps"] = fps
+
+                self.status["cpu"] = cpu
+
+                self.status["ram"] = ram
+
+                self.status["hands"] = len(predictions)
+
+                self.status["gesture"] = current_gesture
+
+                self.status["confidence"] = (
+                    current_confidence
                 )
 
-        finally:
-            self.release()
+                self.status["hand"] = current_hand
+
+                self.status["history"] = history
+
+            # -------------------------------------------------
+            # JPEG
+            # -------------------------------------------------
+
+            success, buffer = cv2.imencode(
+                ".jpg",
+                frame
+            )
+
+            if not success:
+                continue
+
+            frame_bytes = buffer.tobytes()
+
+            yield (
+                b"--frame\r\n"
+                b"Content-Type: image/jpeg\r\n\r\n"
+                + frame_bytes
+                + b"\r\n"
+            )
+
+    # =====================================================
+    # RELEASE
+    # =====================================================
 
     def release(self):
 
@@ -194,7 +332,7 @@ class VideoStream:
             pass
 
         try:
-            self.detector.close()
+            self.uart.close()
         except Exception:
             pass
 
