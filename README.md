@@ -220,27 +220,6 @@ python uart_test.py
 
 ---
 
-## 📄 License
-
-This project is licensed under the MIT License.
-
----
-
-## 👨‍💻 Author
-
-**Nagaraju**
-
-GitHub:
-https://github.com/nagaraju072001-design
-
----
-
-## ⭐ If you found this project useful, consider giving it a Star!
-
-
-
-
----
 
 ## 📸 Live System Demonstration
 
@@ -285,3 +264,21 @@ The system can detect and classify gestures from **both hands simultaneously**.
 - Raspberry Pi 5 deployment
 
 ---
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+## 👨‍💻 Author
+
+**Nagaraju**
+
+GitHub:
+https://github.com/nagaraju072001-design
+
+---
+
+## ⭐ If you found this project useful, consider giving it a Star!
+
+
