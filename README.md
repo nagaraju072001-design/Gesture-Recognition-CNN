@@ -263,10 +263,6 @@ The system can detect and classify gestures from **both hands simultaneously**.
 - Single-hand and dual-hand recognition
 - Raspberry Pi 5 deployment
 
----
-## 📄 License
-
-This project is licensed under the MIT License.
 
 ---
 
