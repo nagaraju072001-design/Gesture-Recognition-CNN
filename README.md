@@ -236,3 +236,52 @@ https://github.com/nagaraju072001-design
 ---
 
 ## ⭐ If you found this project useful, consider giving it a Star!
+
+
+
+
+---
+
+## 📸 Live System Demonstration
+
+The system performs real-time hand gesture recognition on Raspberry Pi 5 using CNN-based classification and MediaPipe hand landmark detection.
+
+### Single-Hand Recognition
+
+| Palm | Peace |
+|---|---|
+| ![Palm Recognition](docs/images/palm_right.png) | ![Peace Recognition](docs/images/peace_right.png) |
+
+| Fist | OK |
+|---|---|
+| ![Fist Recognition](docs/images/fist_left.png) | ![OK Recognition](docs/images/ok_left.png) |
+
+### Dual-Hand Recognition
+
+The system can detect and classify gestures from **both hands simultaneously**.
+
+![Dual-Hand Recognition](docs/images/both_hands_fist.png)
+
+### Supported Gestures
+
+- ✋ Palm
+- ✌️ Peace
+- ✊ Fist
+- 👌 OK
+- 👍 Thumb Up
+
+### System Features
+
+- Real-time hand detection
+- Left and right hand identification
+- CNN-based gesture classification
+- MediaPipe hand landmark tracking
+- Confidence score display
+- FPS monitoring
+- CPU and RAM monitoring
+- Gesture history
+- UART command transmission
+- Single-hand and dual-hand recognition
+- Raspberry Pi 5 deployment
+
+---
