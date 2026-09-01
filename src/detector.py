@@ -1,7 +1,7 @@
 from collections import Counter, deque
 
 from hand_detector import HandDetector
-from model import GestureModel
+from aidge_model import AidgeGestureModel
 from normalize import LandmarkNormalizer
 
 # UART Communication
@@ -25,7 +25,7 @@ class GestureDetector:
             tracking_confidence=0.7,
         )
 
-        self.model = GestureModel()
+        self.model = AidgeGestureModel()
 
         self.normalizer = LandmarkNormalizer()
 
