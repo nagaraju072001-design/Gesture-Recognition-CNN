@@ -1,4 +1,5 @@
 import pickle
+import time
 import numpy as np
 
 import aidge_core
@@ -41,6 +42,7 @@ class AidgeGestureModel:
 
         # Create Aidge inference scheduler
         self.scheduler = aidge_core.SequentialScheduler(self.model)
+        self.last_inference_ms = 0.0
 
         print("✅ Aidge AI model loaded successfully.")
 
@@ -58,10 +60,18 @@ class AidgeGestureModel:
         input_tensor = aidge_core.Tensor(landmarks)
 
         # Run inference
+        start_time = time.perf_counter()
+
         outputs = self.scheduler.forward(
             forward_dims=False,
             data=[input_tensor]
         )
+
+        end_time = time.perf_counter()
+
+        self.last_inference_ms = (
+            end_time - start_time
+        ) * 1000.0
 
         # Convert Aidge output to NumPy
         probabilities = np.asarray(outputs[0])

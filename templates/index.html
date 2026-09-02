@@ -53,12 +53,12 @@
 
         .container {
 
-            width: 100%;
-            max-width: 1450px;
 
-            height: 100%;
-
-            margin: auto;
+            width: min(1300px, calc(100vw - 24px));
+            max-width: 1300px;
+            height: calc(100vh - 20px);
+            margin: 0 auto;
+            overflow: hidden;
 
             display: flex;
 
@@ -194,7 +194,7 @@
             display: grid;
 
             grid-template-columns:
-                repeat(4, 1fr);
+                repeat(5, 1fr);
 
             gap: 9px;
 
@@ -268,8 +268,7 @@
             display: grid;
 
             grid-template-columns:
-                minmax(0, 2.15fr)
-                minmax(300px, 0.85fr);
+                minmax(0, 2.1fr) minmax(280px, 0.9fr);
 
             gap: 10px;
         }
@@ -375,7 +374,7 @@
 
             flex-direction: column;
 
-            gap: 9px;
+            gap: 7px;
 
             overflow: hidden;
         }
@@ -449,13 +448,61 @@
            HISTORY
         ===================================================== */
 
-        .history {
+        .hands-panel {
+        padding: 10px;
+    }
+
+    .hands-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 7px;
+        margin-top: 8px;
+    }
+
+    .hand-card {
+        background: #0b1116;
+        border: 1px solid #1d2a32;
+        border-radius: 10px;
+        padding: 9px;
+        min-height: 82px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .hand-card-header {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        color: #8b9aa5;
+    }
+
+    .hand-icon {
+        font-size: 16px;
+    }
+
+    .hand-gesture {
+        margin-top: 7px;
+        font-size: 20px;
+        font-weight: 700;
+    }
+
+    .hand-confidence {
+        margin-top: 5px;
+        font-size: 11px;
+        color: #7f909c;
+    }
+
+    .history {
 
             flex: 1;
 
             min-height: 0;
 
-            padding: 13px 16px;
+            padding: 10px 12px;
 
             overflow: hidden;
         }
@@ -473,7 +520,7 @@
 
             align-items: center;
 
-            padding: 7px 2px;
+            padding: 5px 2px;
 
             border-bottom:
                 1px solid #263238;
@@ -488,23 +535,26 @@
         }
 
 
-        .history-number {
-
-            color: #19d8ff;
-
-            width: 25px;
-
+        .history-icon {
+            width: 28px;
             flex-shrink: 0;
+            font-size: 15px;
+            line-height: 1;
         }
-
 
         .history-gesture {
-
             flex: 1;
-
             color: #d9e0e2;
+            font-weight: 600;
         }
 
+        .history-hand {
+            min-width: 48px;
+            color: #8b9aa5;
+            font-size: 11px;
+            font-weight: 600;
+            text-align: right;
+        }
 
         .empty {
 
@@ -524,7 +574,7 @@
 
             flex-shrink: 0;
 
-            padding: 13px 16px;
+            padding: 10px 12px;
 
             border:
                 1px solid #49337a;
@@ -544,7 +594,7 @@
             grid-template-columns:
                 1fr 1fr;
 
-            gap: 8px;
+            gap: 6px;
 
             margin-top: 9px;
         }
@@ -559,7 +609,7 @@
 
             border-radius: 7px;
 
-            padding: 8px;
+            padding: 6px;
 
             text-align: center;
         }
@@ -593,7 +643,7 @@
 
         .uart-status {
 
-            margin-top: 8px;
+            margin-top: 5px;
 
             color: #00e67f;
 
@@ -815,7 +865,7 @@
                 </div>
 
                 <div class="subtitle">
-                    Raspberry Pi 5 • CNN • MediaPipe • UART Communication
+                    Raspberry Pi 5 • Aidge • MediaPipe • CNN • UART Communication
                 </div>
 
             </div>
@@ -892,7 +942,20 @@
         </div>
 
 
+
         <div class="metric">
+            <div class="metric-label">
+                AIDGE CPU
+            </div>
+            <div
+                class="metric-value"
+                id="aidge"
+            >
+                --
+            </div>
+        </div>
+
+<div class="metric">
 
             <div class="metric-label">
                 HANDS DETECTED
@@ -953,35 +1016,67 @@
 
 
             <!-- =========================================
-                 CURRENT GESTURE
+                 CURRENT GESTURES
             ========================================== -->
 
-            <div class="current">
-
+            <div class="hands-panel">
 
                 <div class="section-label">
-                    CURRENT GESTURE
+                    CURRENT GESTURES
                 </div>
 
+                <div class="hands-grid">
 
-                <div
-                    class="current-gesture"
-                    id="gesture"
-                >
-                    None
+                    <div class="hand-card" id="left-hand-card">
+
+                        <div class="hand-card-header">
+                            <span class="hand-icon">←</span>
+                            <span>LEFT HAND</span>
+                        </div>
+
+                        <div
+                            class="hand-gesture"
+                            id="left-gesture"
+                        >
+                            None
+                        </div>
+
+                        <div
+                            class="hand-confidence"
+                            id="left-confidence"
+                        >
+                            Confidence: 0.0%
+                        </div>
+
+                    </div>
+
+
+                    <div class="hand-card" id="right-hand-card">
+
+                        <div class="hand-card-header">
+                            <span class="hand-icon">→</span>
+                            <span>RIGHT HAND</span>
+                        </div>
+
+                        <div
+                            class="hand-gesture"
+                            id="right-gesture"
+                        >
+                            None
+                        </div>
+
+                        <div
+                            class="hand-confidence"
+                            id="right-confidence"
+                        >
+                            Confidence: 0.0%
+                        </div>
+
+                    </div>
+
                 </div>
-
-
-                <div
-                    class="confidence"
-                    id="confidence"
-                >
-                    Confidence: 0.0%
-                </div>
-
 
             </div>
-
 
 
             <!-- =========================================
@@ -1103,6 +1198,12 @@
                 Raspberry Pi 5
             </span>
 
+            <span class="tag">
+
+                Aidge
+
+            </span>
+
 
             <span class="tag">
                 CNN
@@ -1198,6 +1299,11 @@ async function updateDashboard() {
             .textContent =
             data.hands;
 
+        document
+            .getElementById("aidge")
+            .textContent =
+            Number(data.aidge_ms || 0).toFixed(2) + " ms";
+
 
 
         /* ================================================
@@ -1205,17 +1311,40 @@ async function updateDashboard() {
         ================================================= */
 
 
+        const leftHand =
+            data.hand_gestures?.Left || {
+                gesture: "None",
+                confidence: 0
+            };
+
+        const rightHand =
+            data.hand_gestures?.Right || {
+                gesture: "None",
+                confidence: 0
+            };
+
         document
-            .getElementById("gesture")
+            .getElementById("left-gesture")
             .textContent =
-            data.gesture || "None";
-
+            leftHand.gesture || "None";
 
         document
-            .getElementById("confidence")
+            .getElementById("left-confidence")
             .textContent =
             "Confidence: " +
-            Number(data.confidence || 0).toFixed(1) +
+            Number(leftHand.confidence || 0).toFixed(1) +
+            "%";
+
+        document
+            .getElementById("right-gesture")
+            .textContent =
+            rightHand.gesture || "None";
+
+        document
+            .getElementById("right-confidence")
+            .textContent =
+            "Confidence: " +
+            Number(rightHand.confidence || 0).toFixed(1) +
             "%";
 
 
@@ -1262,6 +1391,17 @@ async function updateDashboard() {
         const history =
             data.history || [];
 
+        const gestureIcons = {
+            "Palm": "🖐️",
+            "Fist": "✊",
+            "Thumb_Up": "👍",
+            "Victory": "✌️",
+    "Peace": "✌️",
+            "OK": "👌",
+            "Unknown": "❓",
+            "None": "👋"
+        };
+
 
         if (history.length === 0) {
 
@@ -1290,17 +1430,19 @@ async function updateDashboard() {
                         <div class="history-row">
 
                             <span
-                                class="history-number"
+                                class="history-icon"
                             >
-                                ${index + 1}
+                                ${gestureIcons[item.gesture] || "👋"}
                             </span>
-
                             <span
                                 class="history-gesture"
                             >
-                                ${item.hand}
-                                :
                                 ${item.gesture}
+                            </span>
+                            <span
+                                class="history-hand"
+                            >
+                                ${item.hand}
                             </span>
 
                         </div>

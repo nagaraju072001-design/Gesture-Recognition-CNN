@@ -72,6 +72,11 @@ class VideoStream:
             "model_status": "LOADED",
 
             "camera_status": "CONNECTED",
+            "aidge_ms": 0.0,
+            "hand_gestures": {
+                "Left": {"gesture": "None", "confidence": 0.0},
+                "Right": {"gesture": "None", "confidence": 0.0},
+            },
 
             "history": [],
         }
@@ -121,6 +126,11 @@ class VideoStream:
                 "model_status": self.status["model_status"],
 
                 "camera_status": self.status["camera_status"],
+                "aidge_ms": self.status["aidge_ms"],
+                "hand_gestures": {
+                    "Left": dict(self.status["hand_gestures"]["Left"]),
+                    "Right": dict(self.status["hand_gestures"]["Right"]),
+                },
 
                 "history": list(
                     self.status["history"]
@@ -219,6 +229,16 @@ class VideoStream:
             )
 
             # -------------------------------------------------
+            aidge_ms = self.detector.model.last_inference_ms
+
+            current_hands = {
+
+                "Left": {"gesture": "None", "confidence": 0.0},
+
+                "Right": {"gesture": "None", "confidence": 0.0},
+
+            }
+
             # Current Gesture
             # -------------------------------------------------
             current_gesture = "None"
@@ -237,6 +257,12 @@ class VideoStream:
                 hand = pred["hand"]
 
                 confidence = pred["confidence"]
+
+                if hand in current_hands:
+                    current_hands[hand] = {
+                        "gesture": gesture,
+                        "confidence": confidence,
+                    }
 
                 # -------------------------------------------------
                 # Ignore Unknown Predictions
@@ -366,6 +392,9 @@ class VideoStream:
                 self.status[
                     "history"
                 ] = history
+
+                self.status["aidge_ms"] = aidge_ms
+                self.status["hand_gestures"] = current_hands
 
             # -------------------------------------------------
             # JPEG Encoding
