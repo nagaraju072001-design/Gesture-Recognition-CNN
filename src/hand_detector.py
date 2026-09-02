@@ -46,11 +46,6 @@ class HandDetector:
                         .label
                     )
 
-                    # Correct handedness for mirrored camera input
-                    if hand_type == "Left":
-                        hand_type = "Right"
-                    elif hand_type == "Right":
-                        hand_type = "Left"
 
                 # Calculate bounding box
                 x_list = []

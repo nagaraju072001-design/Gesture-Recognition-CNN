@@ -1,5 +1,6 @@
 import time
 import threading
+
 import cv2
 
 from camera import open_camera
@@ -9,10 +10,6 @@ from performance import PerformanceMonitor
 from history import GestureHistory
 from recorder import VideoRecorder
 
-from communication.hex_protocol import get_command
-from communication.packet import create_packet
-from communication.uart_sender import UARTSender
-
 
 class VideoStream:
 
@@ -20,10 +17,21 @@ class VideoStream:
 
         print("Starting Video Stream...")
 
+        # -------------------------------------------------
+        # Camera
+        # -------------------------------------------------
         self.cap = open_camera()
 
+        # -------------------------------------------------
+        # Gesture Detector
+        #
+        # GestureDetector owns the ONLY UART connection.
+        # -------------------------------------------------
         self.detector = GestureDetector()
 
+        # -------------------------------------------------
+        # Dashboard Components
+        # -------------------------------------------------
         self.overlay = Overlay()
 
         self.performance = PerformanceMonitor()
@@ -35,41 +43,46 @@ class VideoStream:
         self.last_camera_check = time.time()
 
         # -------------------------------------------------
-        # UART
+        # Latest Dashboard Information
         # -------------------------------------------------
-
-        self.uart = UARTSender()
-
-        # -------------------------------------------------
-        # Latest dashboard information
-        # -------------------------------------------------
-
         self.status_lock = threading.Lock()
 
         self.status = {
+
             "fps": 0.0,
+
             "cpu": 0.0,
+
             "ram": 0.0,
+
             "hands": 0,
 
             "gesture": "None",
+
             "confidence": 0.0,
+
             "hand": "None",
 
             "command": "--",
+
             "packet": "--",
+
             "uart_status": "READY",
 
             "model_status": "LOADED",
+
             "camera_status": "CONNECTED",
 
             "history": [],
         }
 
-        # Prevent repeated UART transmissions
-
+        # -------------------------------------------------
+        # Last Gesture Added To Dashboard History
+        # -------------------------------------------------
         self.last_uart_gesture = {
+
             "Left": None,
+
             "Right": None,
         }
 
@@ -84,23 +97,34 @@ class VideoStream:
         with self.status_lock:
 
             return {
+
                 "fps": self.status["fps"],
+
                 "cpu": self.status["cpu"],
+
                 "ram": self.status["ram"],
+
                 "hands": self.status["hands"],
 
                 "gesture": self.status["gesture"],
+
                 "confidence": self.status["confidence"],
+
                 "hand": self.status["hand"],
 
                 "command": self.status["command"],
+
                 "packet": self.status["packet"],
+
                 "uart_status": self.status["uart_status"],
 
                 "model_status": self.status["model_status"],
+
                 "camera_status": self.status["camera_status"],
 
-                "history": list(self.status["history"]),
+                "history": list(
+                    self.status["history"]
+                ),
             }
 
     # =====================================================
@@ -113,6 +137,7 @@ class VideoStream:
 
         try:
             self.cap.release()
+
         except Exception:
             pass
 
@@ -121,47 +146,10 @@ class VideoStream:
         self.cap = open_camera()
 
         with self.status_lock:
-            self.status["camera_status"] = "CONNECTED"
 
-    # =====================================================
-    # UART
-    # =====================================================
-
-    def send_uart(self, gesture):
-
-        try:
-
-            command = get_command(gesture)
-
-            if command is None:
-                return
-
-            command_value = int(command)
-
-            packet = create_packet(command_value)
-
-            self.uart.send(command_value)
-
-            with self.status_lock:
-
-                self.status["command"] = (
-                    f"0x{command_value:02X}"
-                )
-
-                self.status["packet"] = (
-                    packet.hex().upper()
-                )
-
-                self.status["uart_status"] = (
-                    "SENT SUCCESSFULLY"
-                )
-
-        except Exception as e:
-
-            print(f"UART Error: {e}")
-
-            with self.status_lock:
-                self.status["uart_status"] = "ERROR"
+            self.status[
+                "camera_status"
+            ] = "CONNECTED"
 
     # =====================================================
     # FRAME GENERATOR
@@ -171,30 +159,38 @@ class VideoStream:
 
         while True:
 
+            # -------------------------------------------------
+            # Capture Frame
+            # -------------------------------------------------
             success, frame = self.cap.read()
 
             if not success:
 
                 if (
-                    time.time() -
-                    self.last_camera_check
+                    time.time()
+                    - self.last_camera_check
                     > 2
                 ):
 
                     self.reconnect_camera()
 
-                    self.last_camera_check = time.time()
+                    self.last_camera_check = (
+                        time.time()
+                    )
 
                 continue
 
-            # Mirror camera
-
-            frame = cv2.flip(frame, 1)
+            # -------------------------------------------------
+            # Mirror Camera
+            # -------------------------------------------------
+            frame = cv2.flip(
+                frame,
+                1
+            )
 
             # -------------------------------------------------
             # Performance
             # -------------------------------------------------
-
             self.performance.update()
 
             fps = self.performance.get_fps()
@@ -204,21 +200,36 @@ class VideoStream:
             ram = self.performance.get_memory()
 
             # -------------------------------------------------
-            # AI
+            # AI Processing
+            #
+            # Camera
+            #   ↓
+            # MediaPipe
+            #   ↓
+            # Normalization
+            #   ↓
+            # Aidge CNN
+            #   ↓
+            # UART
             # -------------------------------------------------
-
-            frame, predictions = self.detector.process(
-                frame
+            frame, predictions = (
+                self.detector.process(
+                    frame
+                )
             )
 
             # -------------------------------------------------
-            # Gesture handling
+            # Current Gesture
             # -------------------------------------------------
-
             current_gesture = "None"
+
             current_confidence = 0.0
+
             current_hand = "None"
 
+            # -------------------------------------------------
+            # Process Predictions
+            # -------------------------------------------------
             for pred in predictions:
 
                 gesture = pred["gesture"]
@@ -227,21 +238,63 @@ class VideoStream:
 
                 confidence = pred["confidence"]
 
+                # -------------------------------------------------
+                # Ignore Unknown Predictions
+                # -------------------------------------------------
                 if gesture == "Unknown":
                     continue
 
+                # -------------------------------------------------
+                # Current Dashboard Gesture
+                # -------------------------------------------------
                 current_gesture = gesture
 
                 current_confidence = confidence
 
                 current_hand = hand
 
-                # ---------------------------------------------
-                # Add history only when gesture changes
-                # ---------------------------------------------
+                # -------------------------------------------------
+                # UART Information From Detector
+                # -------------------------------------------------
+                uart_info = pred.get(
+                    "uart"
+                )
 
                 if (
-                    self.last_uart_gesture.get(hand)
+                    uart_info
+                    and uart_info.get(
+                        "command"
+                    ) is not None
+                ):
+
+                    with self.status_lock:
+
+                        self.status[
+                            "command"
+                        ] = uart_info[
+                            "command"
+                        ]
+
+                        self.status[
+                            "packet"
+                        ] = uart_info[
+                            "packet"
+                        ]
+
+                        self.status[
+                            "uart_status"
+                        ] = uart_info[
+                            "uart_status"
+                        ]
+
+                # -------------------------------------------------
+                # Add Gesture To Dashboard History
+                # Only when gesture changes
+                # -------------------------------------------------
+                if (
+                    self.last_uart_gesture.get(
+                        hand
+                    )
                     != gesture
                 ):
 
@@ -250,61 +303,77 @@ class VideoStream:
                         gesture
                     )
 
-                    self.last_uart_gesture[hand] = gesture
-
-                    # UART
-
-                    self.send_uart(gesture)
+                    self.last_uart_gesture[
+                        hand
+                    ] = gesture
 
             # -------------------------------------------------
-            # History
+            # Get History
             # -------------------------------------------------
-
             history = self.history.get()
 
             # -------------------------------------------------
-            # Camera overlay
+            # Camera Overlay
             # -------------------------------------------------
-
             frame = self.overlay.draw(
+
                 frame,
+
                 predictions,
+
                 fps,
+
                 cpu,
+
                 ram,
+
                 history,
             )
 
             # -------------------------------------------------
-            # Update dashboard status
+            # Update Dashboard Status
             # -------------------------------------------------
-
             with self.status_lock:
 
-                self.status["fps"] = fps
+                self.status[
+                    "fps"
+                ] = fps
 
-                self.status["cpu"] = cpu
+                self.status[
+                    "cpu"
+                ] = cpu
 
-                self.status["ram"] = ram
+                self.status[
+                    "ram"
+                ] = ram
 
-                self.status["hands"] = len(predictions)
+                self.status[
+                    "hands"
+                ] = len(predictions)
 
-                self.status["gesture"] = current_gesture
+                self.status[
+                    "gesture"
+                ] = current_gesture
 
-                self.status["confidence"] = (
-                    current_confidence
-                )
+                self.status[
+                    "confidence"
+                ] = current_confidence
 
-                self.status["hand"] = current_hand
+                self.status[
+                    "hand"
+                ] = current_hand
 
-                self.status["history"] = history
+                self.status[
+                    "history"
+                ] = history
 
             # -------------------------------------------------
-            # JPEG
+            # JPEG Encoding
             # -------------------------------------------------
-
             success, buffer = cv2.imencode(
+
                 ".jpg",
+
                 frame
             )
 
@@ -313,10 +382,17 @@ class VideoStream:
 
             frame_bytes = buffer.tobytes()
 
+            # -------------------------------------------------
+            # MJPEG Frame
+            # -------------------------------------------------
             yield (
+
                 b"--frame\r\n"
+
                 b"Content-Type: image/jpeg\r\n\r\n"
+
                 + frame_bytes
+
                 + b"\r\n"
             )
 
@@ -326,17 +402,34 @@ class VideoStream:
 
     def release(self):
 
+        # -------------------------------------------------
+        # Release Camera
+        # -------------------------------------------------
         try:
+
             self.cap.release()
+
         except Exception:
             pass
 
+        # -------------------------------------------------
+        # Close Detector
+        #
+        # Detector closes the ONLY UART connection.
+        # -------------------------------------------------
         try:
-            self.uart.close()
+
+            self.detector.close()
+
         except Exception:
             pass
 
+        # -------------------------------------------------
+        # OpenCV Cleanup
+        # -------------------------------------------------
         try:
+
             cv2.destroyAllWindows()
+
         except Exception:
             pass
