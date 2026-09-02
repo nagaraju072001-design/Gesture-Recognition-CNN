@@ -14,7 +14,7 @@ from aidge_model import AidgeGestureModel
 
 
 WARMUP_FRAMES = 20
-BENCHMARK_FRAMES = 100
+BENCHMARK_FRAMES = 300
 
 
 def ms(values):
