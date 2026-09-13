@@ -1,1495 +1,873 @@
-<!DOCTYPE html>
+k<!DOCTYPE html>
 <html lang="en">
-
 <head>
-
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>AI Hand Gesture Recognition</title>
-
-
-    <style>
-
-        * {
-            box-sizing: border-box;
-        }
-
-
-        /* =====================================================
-           PAGE
-        ===================================================== */
-
-        html,
-        body {
-
-            margin: 0;
-
-            width: 100%;
-            height: 100%;
-
-            background: #070b0e;
-
-            color: #f2f5f5;
-
-            font-family:
-                Arial,
-                Helvetica,
-                sans-serif;
-
-            overflow: hidden;
-        }
-
-
-        body {
-
-            padding: 10px 18px;
-        }
-
-
-        .container {
-
-
-            width: min(1300px, calc(100vw - 24px));
-            max-width: 1300px;
-            height: calc(100vh - 20px);
-            margin: 0 auto;
-            overflow: hidden;
-
-            display: flex;
-
-            flex-direction: column;
-        }
-
-
-        /* =====================================================
-           HEADER
-        ===================================================== */
-
-        .header {
-
-            flex-shrink: 0;
-
-            display: flex;
-
-            justify-content: space-between;
-
-            align-items: center;
-
-            padding: 2px 4px 7px 4px;
-
-            margin-bottom: 7px;
-
-            border-bottom:
-                1px solid #263238;
-        }
-
-
-        .brand {
-
-            display: flex;
-
-            align-items: center;
-
-            gap: 12px;
-        }
-
-
-        .logo {
-
-            width: 44px;
-            height: 44px;
-
-            flex-shrink: 0;
-
-            border-radius: 11px;
-
-            border:
-                1px solid #00d979;
-
-            background: #0c211a;
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-
-            font-size: 23px;
-        }
-
-
-        .title {
-
-            font-size: 24px;
-
-            line-height: 1.1;
-
-            font-weight: 700;
-
-            letter-spacing: 0.2px;
-        }
-
-
-        .subtitle {
-
-            margin-top: 4px;
-
-            color: #8d9ba1;
-
-            font-size: 12px;
-        }
-
-
-        .online {
-
-            display: flex;
-
-            align-items: center;
-
-            gap: 7px;
-
-            padding: 8px 14px;
-
-            border:
-                1px solid #00d979;
-
-            border-radius: 20px;
-
-            color: #00e67f;
-
-            background: #0a1e17;
-
-            font-size: 12px;
-
-            font-weight: bold;
-
-            white-space: nowrap;
-        }
-
-
-        .online-dot {
-
-            width: 8px;
-            height: 8px;
-
-            border-radius: 50%;
-
-            background: #00e67f;
-        }
-
-
-        /* =====================================================
-           PERFORMANCE METRICS
-        ===================================================== */
-
-        .metrics {
-
-            flex-shrink: 0;
-
-            display: grid;
-
-            grid-template-columns:
-                repeat(5, 1fr);
-
-            gap: 9px;
-
-            margin-bottom: 9px;
-        }
-
-
-        .metric {
-
-            background: #10171b;
-
-            border:
-                1px solid #26353b;
-
-            border-radius: 9px;
-
-            padding: 7px 14px;
-        }
-
-
-        .metric-label {
-
-            color: #7f8d93;
-
-            font-size: 10px;
-
-            text-transform: uppercase;
-
-            letter-spacing: 1px;
-        }
-
-
-        .metric-value {
-
-            margin-top: 2px;
-
-            font-size: 20px;
-
-            line-height: 1.1;
-
-            font-weight: bold;
-
-            color: #19d8ff;
-        }
-
-
-        .metric:nth-child(3)
-        .metric-value {
-
-            color: #a875ff;
-        }
-
-
-        .metric:nth-child(4)
-        .metric-value {
-
-            color: #00e67f;
-        }
-
-
-        /* =====================================================
-           MAIN CONTENT
-        ===================================================== */
-
-        .main-grid {
-
-            flex: 1;
-
-            min-height: 0;
-
-            display: grid;
-
-            grid-template-columns:
-                minmax(0, 2.1fr) minmax(280px, 0.9fr);
-
-            gap: 10px;
-        }
-
-
-        /* =====================================================
-           COMMON CARD
-        ===================================================== */
-
-        .card {
-
-            background: #10171b;
-
-            border:
-                1px solid #26353b;
-
-            border-radius: 11px;
-
-            overflow: hidden;
-        }
-
-
-        .card-title {
-
-            height: 34px;
-
-            display: flex;
-
-            align-items: center;
-
-            padding: 0 14px;
-
-            border-bottom:
-                1px solid #26353b;
-
-            font-size: 12px;
-
-            font-weight: bold;
-
-            letter-spacing: 0.7px;
-
-            color: #cbd5d8;
-        }
-
-
-        /* =====================================================
-           CAMERA
-        ===================================================== */
-
-        .camera-card {
-
-            min-height: 0;
-
-            display: flex;
-
-            flex-direction: column;
-        }
-
-
-        .camera {
-
-            flex: 1;
-
-            min-height: 0;
-
-            background: #000;
-
-            padding: 4px;
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-
-            overflow: hidden;
-        }
-
-
-        .camera img {
-
-            display: block;
-
-            width: 100%;
-
-            height: 100%;
-
-            object-fit: contain;
-
-            border-radius: 7px;
-        }
-
-
-        /* =====================================================
-           RIGHT SIDE
-        ===================================================== */
-
-        .side {
-
-            min-height: 0;
-
-            display: flex;
-
-            flex-direction: column;
-
-            gap: 7px;
-
-            overflow: hidden;
-        }
-
-
-        /* =====================================================
-           CURRENT GESTURE
-        ===================================================== */
-
-        .current {
-
-            flex-shrink: 0;
-
-            padding: 13px 16px;
-
-            border:
-                1px solid #145e43;
-
-            background:
-                linear-gradient(
-                    135deg,
-                    #10221b,
-                    #0d1719
-                );
-
-            border-radius: 11px;
-        }
-
-
-        .section-label {
-
-            color: #00e67f;
-
-            font-size: 10px;
-
-            font-weight: bold;
-
-            letter-spacing: 1px;
-
-            text-transform: uppercase;
-        }
-
-
-        .current-gesture {
-
-            margin-top: 6px;
-
-            font-size: 27px;
-
-            line-height: 1.1;
-
-            font-weight: bold;
-
-            color: #27e67f;
-
-            word-break: break-word;
-        }
-
-
-        .confidence {
-
-            margin-top: 4px;
-
-            color: #b8c2c6;
-
-            font-size: 12px;
-        }
-
-
-        /* =====================================================
-           HISTORY
-        ===================================================== */
-
-        .hands-panel {
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Embedded AI | Gesture Recognition</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    min-height: 100%;
+    background: #070b0f;
+    color: #e8eef2;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body {
+    padding: 18px;
+}
+
+.container {
+    width: min(1350px, 100%);
+    margin: auto;
+}
+
+/* HEADER */
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 4px 18px;
+    border-bottom: 1px solid #26343b;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+}
+
+.logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #10251c;
+    border: 1px solid #00d982;
+    font-size: 25px;
+}
+
+.title {
+    font-size: 25px;
+    font-weight: 800;
+}
+
+.subtitle {
+    margin-top: 5px;
+    color: #81919a;
+    font-size: 12px;
+}
+
+.online {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 15px;
+    border-radius: 20px;
+    border: 1px solid #00d982;
+    background: #0b2118;
+    color: #00e67f;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.online-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #00e67f;
+    box-shadow: 0 0 10px #00e67f;
+}
+
+/* PERFORMANCE */
+
+.metrics {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin: 16px 0;
+}
+
+.metric {
+    background: #10171b;
+    border: 1px solid #26343b;
+    border-radius: 10px;
+    padding: 13px 15px;
+}
+
+.metric-label {
+    color: #7d8c95;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.metric-value {
+    margin-top: 7px;
+    font-size: 21px;
+    font-weight: 800;
+    color: #19d8ff;
+}
+
+.metric:nth-child(3) .metric-value {
+    color: #a875ff;
+}
+
+.metric:nth-child(4) .metric-value {
+    color: #00e67f;
+}
+
+/* MAIN */
+
+.main-grid {
+    display: grid;
+    grid-template-columns: 2.05fr 1fr;
+    gap: 12px;
+}
+
+.card {
+    background: #10171b;
+    border: 1px solid #26343b;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.card-title {
+    height: 42px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    border-bottom: 1px solid #26343b;
+    color: #cbd5d8;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+/* CAMERA */
+
+.camera {
+    background: #000;
+    padding: 5px;
+}
+
+.camera img {
+    width: 100%;
+    display: block;
+    border-radius: 8px;
+}
+
+/* CURRENT GESTURE */
+
+.current {
+    margin: 12px;
+    padding: 17px;
+    border-radius: 11px;
+    border: 1px solid #145e43;
+    background: linear-gradient(135deg, #10251c, #0c1518);
+}
+
+.section-label {
+    color: #00e67f;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.current-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 10px;
+}
+
+.gesture-icon {
+    width: 62px;
+    height: 62px;
+    border-radius: 13px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #17253a;
+    font-size: 32px;
+}
+
+.gesture-name {
+    font-size: 25px;
+    font-weight: 800;
+    color: #27e67f;
+}
+
+.confidence {
+    margin-top: 6px;
+    color: #aebbc0;
+    font-size: 12px;
+}
+
+/* SYSTEM */
+
+.system {
+    padding: 0 12px 12px;
+}
+
+.system-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.system-item {
+    background: #0b1116;
+    border: 1px solid #1d2a32;
+    border-radius: 9px;
+    padding: 12px;
+}
+
+.system-label {
+    color: #7f9099;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+}
+
+.system-value {
+    margin-top: 6px;
+    font-size: 13px;
+    font-weight: bold;
+    color: #00e67f;
+}
+
+/* HISTORY */
+
+.section {
+    margin-top: 12px;
+}
+
+.history-card {
+    padding-bottom: 10px;
+}
+
+.history-list {
+    padding: 10px 12px 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.history-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #0b1116;
+    border: 1px solid #1d2a32;
+    border-radius: 9px;
+    padding: 11px;
+}
+
+.history-number {
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    background: #17253a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #19d8ff;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.history-icon {
+    font-size: 21px;
+}
+
+.history-info {
+    min-width: 0;
+}
+
+.history-gesture {
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.history-hand {
+    margin-top: 3px;
+    color: #7f9099;
+    font-size: 10px;
+}
+
+/* UART */
+
+.uart {
+    padding-bottom: 12px;
+}
+
+.uart-grid {
+    padding: 12px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 9px;
+}
+
+.uart-item {
+    background: #0b1116;
+    border: 1px solid #1d2a32;
+    border-radius: 9px;
+    padding: 12px;
+}
+
+.uart-label {
+    color: #7f9099;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+}
+
+.uart-value {
+    margin-top: 7px;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.uart-status {
+    color: #00e67f;
+}
+
+/* FOOTER */
+
+.footer {
+    text-align: center;
+    padding: 20px 0 5px;
+    color: #596970;
+    font-size: 11px;
+}
+
+.empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 18px;
+    color: #66757d;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 950px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .metrics {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .history-list {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .uart-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    body {
         padding: 10px;
     }
 
-    .hands-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 7px;
-        margin-top: 8px;
-    }
-
-    .hand-card {
-        background: #0b1116;
-        border: 1px solid #1d2a32;
-        border-radius: 10px;
-        padding: 9px;
-        min-height: 82px;
-        display: flex;
+    .header {
+        align-items: flex-start;
+        gap: 12px;
         flex-direction: column;
-        justify-content: center;
     }
 
-    .hand-card-header {
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 1px;
-        color: #8b9aa5;
+    .metrics,
+    .history-list,
+    .uart-grid,
+    .system-grid {
+        grid-template-columns: 1fr;
     }
-
-    .hand-icon {
-        font-size: 16px;
-    }
-
-    .hand-gesture {
-        margin-top: 7px;
-        font-size: 20px;
-        font-weight: 700;
-    }
-
-    .hand-confidence {
-        margin-top: 5px;
-        font-size: 11px;
-        color: #7f909c;
-    }
-
-    .history {
-
-            flex: 1;
-
-            min-height: 0;
-
-            padding: 10px 12px;
-
-            overflow: hidden;
-        }
-
-
-        .history-list {
-
-            margin-top: 7px;
-        }
-
-
-        .history-row {
-
-            display: flex;
-
-            align-items: center;
-
-            padding: 5px 2px;
-
-            border-bottom:
-                1px solid #263238;
-
-            font-size: 12px;
-        }
-
-
-        .history-row:last-child {
-
-            border-bottom: none;
-        }
-
-
-        .history-icon {
-            width: 28px;
-            flex-shrink: 0;
-            font-size: 15px;
-            line-height: 1;
-        }
-
-        .history-gesture {
-            flex: 1;
-            color: #d9e0e2;
-            font-weight: 600;
-        }
-
-        .history-hand {
-            min-width: 48px;
-            color: #8b9aa5;
-            font-size: 11px;
-            font-weight: 600;
-            text-align: right;
-        }
-
-        .empty {
-
-            color: #69777d;
-
-            padding: 12px 0;
-
-            font-size: 12px;
-        }
-
-
-        /* =====================================================
-           UART
-        ===================================================== */
-
-        .uart {
-
-            flex-shrink: 0;
-
-            padding: 10px 12px;
-
-            border:
-                1px solid #49337a;
-        }
-
-
-        .uart-title {
-
-            color: #b276ff;
-        }
-
-
-        .uart-grid {
-
-            display: grid;
-
-            grid-template-columns:
-                1fr 1fr;
-
-            gap: 6px;
-
-            margin-top: 9px;
-        }
-
-
-        .uart-item {
-
-            background: #0b1015;
-
-            border:
-                1px solid #3d2c69;
-
-            border-radius: 7px;
-
-            padding: 6px;
-
-            text-align: center;
-        }
-
-
-        .uart-label {
-
-            color: #7f8d93;
-
-            font-size: 9px;
-
-            text-transform: uppercase;
-        }
-
-
-        .uart-value {
-
-            margin-top: 4px;
-
-            color: #b276ff;
-
-            font-size: 17px;
-
-            font-weight: bold;
-
-            font-family: monospace;
-
-            word-break: break-all;
-        }
-
-
-        .uart-status {
-
-            margin-top: 5px;
-
-            color: #00e67f;
-
-            font-size: 10px;
-
-            font-weight: bold;
-        }
-
-
-        /* =====================================================
-           FOOTER
-        ===================================================== */
-
-        .footer {
-
-            flex-shrink: 0;
-
-            display: flex;
-
-            justify-content: space-between;
-
-            align-items: center;
-
-            margin-top: 6px;
-
-            padding-top: 4px;
-
-            font-size: 10px;
-
-            color: #718087;
-        }
-
-
-        .tags {
-
-            display: flex;
-
-            gap: 6px;
-
-            flex-wrap: nowrap;
-        }
-
-
-        .tag {
-
-            padding: 5px 9px;
-
-            background: #10171b;
-
-            border:
-                1px solid #26353b;
-
-            border-radius: 6px;
-
-            color: #9aa8ad;
-
-            white-space: nowrap;
-        }
-
-
-        /* =====================================================
-           TABLET / SMALL LAPTOP
-        ===================================================== */
-
-        @media (max-width: 1000px) {
-
-            .title {
-
-                font-size: 20px;
-            }
-
-            .subtitle {
-
-                font-size: 10px;
-            }
-
-            .main-grid {
-
-                grid-template-columns:
-                    minmax(0, 1.7fr)
-                    minmax(270px, 0.8fr);
-            }
-
-            .current-gesture {
-
-                font-size: 23px;
-            }
-        }
-
-
-        /* =====================================================
-           MOBILE
-        ===================================================== */
-
-        @media (max-width: 750px) {
-
-            html,
-            body {
-
-                overflow: auto;
-
-                height: auto;
-            }
-
-
-            body {
-
-                padding: 10px;
-            }
-
-
-            .container {
-
-                height: auto;
-            }
-
-
-            .header {
-
-                align-items: flex-start;
-            }
-
-
-            .title {
-
-                font-size: 18px;
-            }
-
-
-            .online {
-
-                font-size: 9px;
-
-                padding: 7px 9px;
-            }
-
-
-            .metrics {
-
-                grid-template-columns:
-                    repeat(2, 1fr);
-            }
-
-
-            .main-grid {
-
-                grid-template-columns: 1fr;
-
-                flex: none;
-            }
-
-
-            .camera-card {
-
-                height: 55vh;
-            }
-
-
-            .side {
-
-                overflow: visible;
-            }
-
-
-            .history {
-
-                flex: none;
-            }
-
-
-            .footer {
-
-                flex-direction: column;
-
-                align-items: flex-start;
-
-                gap: 8px;
-
-                padding-bottom: 10px;
-            }
-
-
-            .tags {
-
-                flex-wrap: wrap;
-            }
-        }
-
-    </style>
-
+}
+</style>
 </head>
-
 
 <body>
 
-
 <div class="container">
 
-
-    <!-- =================================================
-         HEADER
-    ================================================== -->
-
-    <header class="header">
-
-
-        <div class="brand">
-
-
-            <div class="logo">
-                ✋
-            </div>
-
-
-            <div>
-
-                <div class="title">
-                    AI Hand Gesture Recognition System
-                </div>
-
-                <div class="subtitle">
-                    Raspberry Pi 5 • Aidge • MediaPipe • CNN • UART Communication
-                </div>
-
-            </div>
-
-
-        </div>
-
-
-        <div class="online">
-
-            <span class="online-dot"></span>
-
-            SYSTEM ONLINE
-
-        </div>
-
-
-    </header>
-
-
-
-    <!-- =================================================
-         PERFORMANCE
-    ================================================== -->
-
-    <section class="metrics">
-
-
-        <div class="metric">
-
-            <div class="metric-label">
-                FPS
-            </div>
-
-            <div
-                class="metric-value"
-                id="fps"
-            >
-                --
-            </div>
-
-        </div>
-
-
-        <div class="metric">
-
-            <div class="metric-label">
-                CPU
-            </div>
-
-            <div
-                class="metric-value"
-                id="cpu"
-            >
-                --
-            </div>
-
-        </div>
-
-
-        <div class="metric">
-
-            <div class="metric-label">
-                RAM
-            </div>
-
-            <div
-                class="metric-value"
-                id="ram"
-            >
-                --
-            </div>
-
-        </div>
-
-
-
-        <div class="metric">
-            <div class="metric-label">
-                AIDGE CPU
-            </div>
-            <div
-                class="metric-value"
-                id="aidge"
-            >
-                --
-            </div>
-        </div>
-
-<div class="metric">
-
-            <div class="metric-label">
-                HANDS DETECTED
-            </div>
-
-            <div
-                class="metric-value"
-                id="hands"
-            >
-                0
-            </div>
-
-        </div>
-
-
-    </section>
-
-
-
-    <!-- =================================================
-         MAIN
-    ================================================== -->
-
-    <main class="main-grid">
-
-
-        <!-- =============================================
-             CAMERA
-        ============================================== -->
-
-        <div class="card camera-card">
-
-
-            <div class="card-title">
-                LIVE CAMERA FEED
-            </div>
-
-
-            <div class="camera">
-
-                <img
-                    src="/video_feed"
-                    alt="Live hand gesture recognition camera feed"
-                >
-
-            </div>
-
-
-        </div>
-
-
-
-        <!-- =============================================
-             RIGHT SIDE
-        ============================================== -->
-
-        <div class="side">
-
-
-            <!-- =========================================
-                 CURRENT GESTURES
-            ========================================== -->
-
-            <div class="hands-panel">
-
-                <div class="section-label">
-                    CURRENT GESTURES
-                </div>
-
-                <div class="hands-grid">
-
-                    <div class="hand-card" id="left-hand-card">
-
-                        <div class="hand-card-header">
-                            <span class="hand-icon">←</span>
-                            <span>LEFT HAND</span>
-                        </div>
-
-                        <div
-                            class="hand-gesture"
-                            id="left-gesture"
-                        >
-                            None
-                        </div>
-
-                        <div
-                            class="hand-confidence"
-                            id="left-confidence"
-                        >
-                            Confidence: 0.0%
-                        </div>
-
-                    </div>
-
-
-                    <div class="hand-card" id="right-hand-card">
-
-                        <div class="hand-card-header">
-                            <span class="hand-icon">→</span>
-                            <span>RIGHT HAND</span>
-                        </div>
-
-                        <div
-                            class="hand-gesture"
-                            id="right-gesture"
-                        >
-                            None
-                        </div>
-
-                        <div
-                            class="hand-confidence"
-                            id="right-confidence"
-                        >
-                            Confidence: 0.0%
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <!-- =========================================
-                 HISTORY
-            ========================================== -->
-
-            <div class="card history">
-
-
-                <div class="section-label">
-                    RECENT GESTURES
-                </div>
-
-
-                <div
-                    class="history-list"
-                    id="history"
-                >
-
-                    <div class="empty">
-                        Waiting for gesture...
-                    </div>
-
-                </div>
-
-
-            </div>
-
-
-
-            <!-- =========================================
-                 UART
-            ========================================== -->
-
-            <div class="card uart">
-
-
-                <div
-                    class="section-label uart-title"
-                >
-                    UART TRANSMISSION
-                </div>
-
-
-                <div class="uart-grid">
-
-
-                    <div class="uart-item">
-
-
-                        <div class="uart-label">
-                            COMMAND
-                        </div>
-
-
-                        <div
-                            class="uart-value"
-                            id="command"
-                        >
-                            --
-                        </div>
-
-
-                    </div>
-
-
-
-                    <div class="uart-item">
-
-
-                        <div class="uart-label">
-                            PACKET HEX
-                        </div>
-
-
-                        <div
-                            class="uart-value"
-                            id="packet"
-                        >
-                            --
-                        </div>
-
-
-                    </div>
-
-
-                </div>
-
-
-                <div
-                    class="uart-status"
-                    id="uart-status"
-                >
-                    ● UART READY
-                </div>
-
-
-            </div>
-
-
-        </div>
-
-
-    </main>
-
-
-
-    <!-- =================================================
-         FOOTER
-    ================================================== -->
-
-    <footer class="footer">
-
-
-        <div class="tags">
-
-
-            <span class="tag">
-                Raspberry Pi 5
-            </span>
-
-            <span class="tag">
-
-                Aidge
-
-            </span>
-
-
-            <span class="tag">
-                CNN
-            </span>
-
-
-            <span class="tag">
-                MediaPipe
-            </span>
-
-
-            <span class="tag">
-                UART
-            </span>
-
-
-        </div>
-
-
+<header class="header">
+    <div class="brand">
+        <div class="logo">🤖</div>
         <div>
-            Embedded AI Gesture System
+            <div class="title">EMBEDDED AI</div>
+            <div class="subtitle">
+                Hand Gesture Recognition • Raspberry Pi 5
+            </div>
+        </div>
+    </div>
+
+    <div class="online" id="systemStatus">
+        <span class="online-dot"></span>
+        SYSTEM ONLINE
+    </div>
+</header>
+
+
+<!-- PERFORMANCE -->
+
+<section class="metrics">
+
+    <div class="metric">
+        <div class="metric-label">Frame Rate</div>
+        <div class="metric-value" id="fps">0.0 FPS</div>
+    </div>
+
+    <div class="metric">
+        <div class="metric-label">Aidge CPU</div>
+        <div class="metric-value" id="aidge">0.00 ms</div>
+    </div>
+
+    <div class="metric">
+        <div class="metric-label">CPU Usage</div>
+        <div class="metric-value" id="cpu">0.0%</div>
+    </div>
+
+    <div class="metric">
+        <div class="metric-label">RAM Usage</div>
+        <div class="metric-value" id="ram">0.0%</div>
+    </div>
+
+    <div class="metric">
+        <div class="metric-label">Hands Detected</div>
+        <div class="metric-value" id="hands">0</div>
+    </div>
+
+</section>
+
+
+<!-- CAMERA + AI -->
+
+<section class="main-grid">
+
+    <div class="card">
+
+        <div class="card-title">
+            LIVE CAMERA • MEDIAPIPE VISION
+        </div>
+
+        <div class="camera">
+            <img
+                src="{{ url_for('video_feed') }}"
+                alt="Live camera feed"
+            >
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <div class="card-title">
+            AI GESTURE RECOGNITION
+        </div>
+
+        <div class="current">
+
+            <div class="section-label">
+                CURRENT GESTURE
+            </div>
+
+            <div class="current-content">
+
+                <div class="gesture-icon" id="gestureIcon">
+                    👋
+                </div>
+
+                <div>
+                    <div class="gesture-name" id="gesture">
+                        NO HAND DETECTED
+                    </div>
+
+                    <div class="confidence" id="confidence">
+                        Confidence: 0.0%
+                    </div>
+
+                    <div class="confidence" id="hand">
+                        Hand: --
+                    </div>
+                </div>
+
+            </div>
+
         </div>
 
 
-    </footer>
+        <div class="system">
 
+            <div class="section-label">
+                SYSTEM STATUS
+            </div>
+
+            <div class="system-grid">
+
+                <div class="system-item">
+                    <div class="system-label">Camera</div>
+                    <div class="system-value" id="cameraStatus">
+                        ● CONNECTED
+                    </div>
+                </div>
+
+                <div class="system-item">
+                    <div class="system-label">AI Model</div>
+                    <div class="system-value" id="modelStatus">
+                        ● LOADED
+                    </div>
+                </div>
+
+                <div class="system-item">
+                    <div class="system-label">UART</div>
+                    <div class="system-value" id="uartReady">
+                        ● READY
+                    </div>
+                </div>
+
+                <div class="system-item">
+                    <div class="system-label">Platform</div>
+                    <div class="system-value">
+                        Raspberry Pi 5
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- UART -->
+
+<section class="section">
+
+<div class="card uart">
+
+    <div class="card-title">
+        UART COMMUNICATION
+    </div>
+
+    <div class="uart-grid">
+
+        <div class="uart-item">
+            <div class="uart-label">Gesture</div>
+            <div class="uart-value" id="uartGesture">
+                None
+            </div>
+        </div>
+
+        <div class="uart-item">
+            <div class="uart-label">Command</div>
+            <div class="uart-value" id="command">
+                --
+            </div>
+        </div>
+
+        <div class="uart-item">
+            <div class="uart-label">Packet</div>
+            <div class="uart-value" id="packet">
+                --
+            </div>
+        </div>
+
+        <div class="uart-item">
+            <div class="uart-label">Transmission</div>
+            <div class="uart-value uart-status" id="uart-status">
+                ● UART READY
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+</section>
+
+
+<!-- HISTORY -->
+
+<section class="section">
+
+<div class="card history-card">
+
+    <div class="card-title">
+        GESTURE HISTORY
+    </div>
+
+    <div class="history-list" id="history">
+        <div class="empty">
+            Waiting for gesture...
+        </div>
+    </div>
+
+</div>
+
+</section>
+
+
+<footer class="footer">
+    Raspberry Pi 5 • MediaPipe • CNN • ONNX • Aidge • UART
+    <br>
+    Embedded AI Hand Gesture Recognition System
+</footer>
 
 </div>
 
 
-
-<!-- =====================================================
-     JAVASCRIPT
-===================================================== -->
-
 <script>
 
+const icons = {
+    Palm: "🖐️",
+    Fist: "✊",
+    Thumb_Up: "👍",
+    Victory: "✌️",
+    Peace: "✌️",
+    OK: "👌",
+    Unknown: "❓",
+    None: "👋"
+};
 
-async function updateDashboard() {
 
+function setText(id, value) {
+    const element = document.getElementById(id);
+
+    if (element) {
+        element.textContent = value;
+    }
+}
+
+
+function updateDashboard(data) {
+
+    /* PERFORMANCE */
+
+    setText(
+        "fps",
+        Number(data.fps || 0).toFixed(1) + " FPS"
+    );
+
+    setText(
+        "aidge",
+        Number(data.aidge_ms || 0).toFixed(2) + " ms"
+    );
+
+    setText(
+        "cpu",
+        Number(data.cpu || 0).toFixed(1) + "%"
+    );
+
+    setText(
+        "ram",
+        Number(data.ram || 0).toFixed(1) + "%"
+    );
+
+    setText(
+        "hands",
+        data.hands || 0
+    );
+
+
+    /* CAMERA */
+
+    setText(
+        "cameraStatus",
+        data.camera_status === "CONNECTED"
+            ? "● CONNECTED"
+            : "● DISCONNECTED"
+    );
+
+
+    /* MODEL */
+
+    setText(
+        "modelStatus",
+        data.model_status === "LOADED"
+            ? "● LOADED"
+            : "● NOT LOADED"
+    );
+
+
+    /* GESTURE */
+
+    const gesture =
+        data.gesture && data.gesture !== "None"
+            ? data.gesture
+            : "NO HAND DETECTED";
+
+    setText("gesture", gesture);
+
+    setText(
+        "gestureIcon",
+        icons[data.gesture] || "👋"
+    );
+
+    setText(
+        "confidence",
+        "Confidence: " +
+        Number(data.confidence || 0).toFixed(1) +
+        "%"
+    );
+
+    setText(
+        "hand",
+        "Hand: " +
+        (data.hand || "--")
+    );
+
+
+    /* UART */
+
+    setText(
+        "uartGesture",
+        data.gesture || "None"
+    );
+
+    setText(
+        "command",
+        data.command || "--"
+    );
+
+    setText(
+        "packet",
+        data.packet || "--"
+    );
+
+    const uartStatus =
+        data.uart_status || "UART READY";
+
+    setText(
+        "uart-status",
+        "● " + uartStatus
+    );
+
+    setText(
+        "uartReady",
+        data.uart_status === "SENT SUCCESSFULLY"
+            ? "● READY"
+            : "● " + (data.uart_status || "READY")
+    );
+
+
+    /* HISTORY */
+
+    const historyElement =
+        document.getElementById("history");
+
+    const history =
+        data.history || [];
+
+    if (history.length === 0) {
+
+        historyElement.innerHTML =
+            '<div class="empty">' +
+            'Waiting for gesture...' +
+            '</div>';
+
+        return;
+    }
+
+
+    historyElement.innerHTML =
+        history
+            .slice(0, 6)
+            .map((item, index) => `
+
+                <div class="history-row">
+
+                    <span class="history-number">
+                        ${index + 1}
+                    </span>
+
+                    <span class="history-icon">
+                        ${icons[item.gesture] || "❓"}
+                    </span>
+
+                    <div class="history-info">
+
+                        <div class="history-gesture">
+                            ${item.gesture}
+                        </div>
+
+                        <div class="history-hand">
+                            ${item.hand} HAND
+                        </div>
+
+                    </div>
+
+                </div>
+
+            `)
+            .join("");
+}
+
+
+async function fetchStatus() {
 
     try {
 
-
         const response =
-            await fetch(
-                "/api/status",
-                {
-                    cache: "no-store"
-                }
-            );
-
+            await fetch("/api/status", {
+                cache: "no-store"
+            });
 
         if (!response.ok) {
-
-            throw new Error(
-                "Status request failed"
-            );
-
+            throw new Error("API error");
         }
-
 
         const data =
             await response.json();
 
+        updateDashboard(data);
 
-
-        /* ================================================
-           PERFORMANCE
-        ================================================= */
-
-
-        document
-            .getElementById("fps")
-            .textContent =
-            Number(data.fps).toFixed(1);
-
-
-        document
-            .getElementById("cpu")
-            .textContent =
-            Number(data.cpu).toFixed(1) + "%";
-
-
-        document
-            .getElementById("ram")
-            .textContent =
-            Number(data.ram).toFixed(1) + "%";
-
-
-        document
-            .getElementById("hands")
-            .textContent =
-            data.hands;
-
-        document
-            .getElementById("aidge")
-            .textContent =
-            Number(data.aidge_ms || 0).toFixed(2) + " ms";
-
-
-
-        /* ================================================
-           CURRENT GESTURE
-        ================================================= */
-
-
-        const leftHand =
-            data.hand_gestures?.Left || {
-                gesture: "None",
-                confidence: 0
-            };
-
-        const rightHand =
-            data.hand_gestures?.Right || {
-                gesture: "None",
-                confidence: 0
-            };
-
-        document
-            .getElementById("left-gesture")
-            .textContent =
-            leftHand.gesture || "None";
-
-        document
-            .getElementById("left-confidence")
-            .textContent =
-            "Confidence: " +
-            Number(leftHand.confidence || 0).toFixed(1) +
-            "%";
-
-        document
-            .getElementById("right-gesture")
-            .textContent =
-            rightHand.gesture || "None";
-
-        document
-            .getElementById("right-confidence")
-            .textContent =
-            "Confidence: " +
-            Number(rightHand.confidence || 0).toFixed(1) +
-            "%";
-
-
-
-        /* ================================================
-           UART
-        ================================================= */
-
-
-        document
-            .getElementById("command")
-            .textContent =
-            data.command || "--";
-
-
-        document
-            .getElementById("packet")
-            .textContent =
-            data.packet || "--";
-
-
-        document
-            .getElementById("uart-status")
-            .textContent =
-            "● " +
-            (
-                data.uart_status ||
-                "UART READY"
-            );
-
-
-
-        /* ================================================
-           HISTORY
-        ================================================= */
-
-
-        const historyElement =
-            document.getElementById(
-                "history"
-            );
-
-
-        const history =
-            data.history || [];
-
-        const gestureIcons = {
-            "Palm": "🖐️",
-            "Fist": "✊",
-            "Thumb_Up": "👍",
-            "Victory": "✌️",
-    "Peace": "✌️",
-            "OK": "👌",
-            "Unknown": "❓",
-            "None": "👋"
-        };
-
-
-        if (history.length === 0) {
-
-
-            historyElement.innerHTML =
-
-                '<div class="empty">' +
-
-                'Waiting for gesture...' +
-
-                '</div>';
-
-
-            return;
-
-        }
-
-
-        historyElement.innerHTML =
-
-            history
-                .slice(0, 6)
-                .map(
-                    (item, index) => `
-
-                        <div class="history-row">
-
-                            <span
-                                class="history-icon"
-                            >
-                                ${gestureIcons[item.gesture] || "👋"}
-                            </span>
-                            <span
-                                class="history-gesture"
-                            >
-                                ${item.gesture}
-                            </span>
-                            <span
-                                class="history-hand"
-                            >
-                                ${item.hand}
-                            </span>
-
-                        </div>
-
-                    `
-                )
-                .join("");
-
+        setText(
+            "systemStatus",
+            "● SYSTEM ONLINE"
+        );
 
     }
-
 
     catch (error) {
 
-
-        console.log(
-            "Dashboard update error:",
-            error
+        setText(
+            "systemStatus",
+            "● SYSTEM OFFLINE"
         );
 
+        setText(
+            "cameraStatus",
+            "● CONNECTION ERROR"
+        );
 
     }
-
 }
 
 
-
-/* =====================================================
-   INITIAL LOAD
-===================================================== */
-
-updateDashboard();
-
-
-/* =====================================================
-   LIVE UPDATE
-===================================================== */
+fetchStatus();
 
 setInterval(
-    updateDashboard,
+    fetchStatus,
     500
 );
 
-
 </script>
 
-
 </body>
-
 </html>
